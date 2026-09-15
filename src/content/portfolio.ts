@@ -11,7 +11,7 @@ export const sections: { id: SectionId; title: string; place: string; number: st
 export const profile = {
   name: 'Michael Lee',
   handle: 'WhirlyFan',
-  role: 'Forward Deployed Engineer · Enterprise AI',
+  role: { title: 'Forward Deployed Engineer', team: 'Enterprise AI' },
   company: 'Handshake',
   intro: 'I build software, work with AI, and look for birds when I step away from the keyboard.',
   email: 'mhykoly@gmail.com',
@@ -19,9 +19,32 @@ export const profile = {
   linkedin: 'https://linkedin.com/in/mhykoly',
   resume: asset('Michael_Lee_Resume.pdf'),
 };
-export const projects = [
+export function formatRole(role: { title: string; team?: string }) {
+  return [role.title, role.team].filter(Boolean).join(' · ');
+}
+export const photographyIntro = {
+  lead: 'Usually birds.',
+  detail: 'Always worth slowing down for.',
+};
+export const aboutCopy = {
+  headline: ['Engineer, bird watcher,', 'occasional longboarder.'],
+  roomDescription:
+    'This little room brings a few of those interests together: a camera, a guitar, a longboard, and a fan keeping the afternoon moving.',
+};
+export interface Project {
+  id: string;
+  name: string;
+  eyebrow: string;
+  description: string;
+  details: string[];
+  tags: string[];
+  url: string | null;
+  artwork?: 'record' | 'books' | 'breeze';
+}
+export const projects: Project[] = [
   {
     id: 'music',
+    artwork: 'record',
     name: 'Music',
     eyebrow: 'A shared soundtrack',
     description:
@@ -35,6 +58,7 @@ export const projects = [
   },
   {
     id: 'lister',
+    artwork: 'books',
     name: 'Lister',
     eyebrow: 'Lists become conversations',
     description: 'An anime-list community with reviews, followers, and live chat.',
@@ -47,6 +71,7 @@ export const projects = [
   },
   {
     id: 'breezy',
+    artwork: 'breeze',
     name: 'Breezy',
     eyebrow: 'A pocket-sized community',
     description: 'An Android social app for posts, comments, likes, and messages.',
@@ -62,7 +87,7 @@ export const experience = [
   {
     id: 'handshake',
     company: 'Handshake',
-    role: profile.role,
+    role: formatRole(profile.role),
     period: 'August 2026–present',
     description:
       'I build and deploy production AI agents for enterprise clients, translating customer workflows into working systems. I own delivery from customer requirements and architecture through evaluations and iteration.',
@@ -109,15 +134,30 @@ export const experience = [
     current: false,
   },
 ];
-export const photos = [
+export type Experience = (typeof experience)[number];
+export interface Photo {
+  id: string;
+  title: string;
+  src: string;
+  alt: string;
+  width: number;
+  height: number;
+  featured?: boolean;
+}
+export const photos: Photo[] = [
   {
     id: 'gull',
+    width: 2000,
+    height: 1289,
+    featured: true,
     title: 'Gull in Flight',
     src: asset('photos/gull-in-flight.jpg'),
     alt: 'A gull gliding low over a field with hills in the background',
   },
   {
     id: 'dove',
+    width: 2000,
+    height: 1363,
     title: 'Mourning Dove',
     src: asset('photos/mourning-dove.jpg'),
     alt: 'A mourning dove foraging on the forest floor in soft light',

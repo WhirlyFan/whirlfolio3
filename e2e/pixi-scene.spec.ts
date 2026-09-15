@@ -74,7 +74,9 @@ test('repeated unsupported-WebGL mounts after a successful capability check reta
   expect(result.cachedCanvases).toBe(0);
 });
 
-test('pause stops animation callbacks, not only changes to rendered pixels', async ({ page }) => {
+test('changing the reduced-motion preference stops animation callbacks, not only pixels', async ({
+  page,
+}) => {
   await page.addInitScript(() => {
     let count = 0;
     const pending = new Set<number>();
@@ -98,7 +100,7 @@ test('pause stops animation callbacks, not only changes to rendered pixels', asy
   });
   await page.goto('/#room');
   await expect(page.getByTestId('room-stage')).toHaveAttribute('data-ready', 'true');
-  await page.getByRole('button', { name: 'Pause motion' }).click();
+  await page.emulateMedia({ reducedMotion: 'reduce' });
   // Pausing requests one final redraw. Wait for actual quiescence rather
   // than assuming a software-GPU frame finishes inside a fixed200ms window.
   await expect.poll(() => page.evaluate(() => Reflect.get(window, '__pendingFrames'))).toBe(0);
@@ -136,8 +138,8 @@ test('uses the painted renderer and keeps fan-off window animation independent',
   const canvas = page.locator('canvas[data-room-canvas]');
   await expect(page.getByTestId('room-stage')).toHaveAttribute('data-ready', 'true');
   await expect(canvas).toHaveAttribute('data-renderer', 'pixi');
-  await page.getByRole('button', { name: 'Fan speed: low' }).click();
-  await page.getByRole('button', { name: 'Fan speed: high' }).click();
+  await page.getByRole('button', { name: 'Desk fan', exact: true }).click();
+  await page.getByRole('button', { name: 'Desk fan', exact: true }).click();
   const fan = await canvas.getAttribute('data-fan-angle');
   const windowTime = Number(await canvas.getAttribute('data-window-time'));
   await expect

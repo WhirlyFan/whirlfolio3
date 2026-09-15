@@ -68,19 +68,16 @@ test('the room entry opens the real animated portfolio, not a frozen room pictur
   await expect
     .poll(async () => Number(await canvas.getAttribute('data-window-time')))
     .toBeGreaterThan(time + 0.2);
-  await page.getByRole('button', { name: /Pause motion/ }).click();
+  await page.emulateMedia({ reducedMotion: 'reduce' });
   // HTML hover/focus transitions overlap the full-screen canvas bounds.
   const paintingOnly = {
     style:
-      '.room-header, .room-dock, .room-hotspot { opacity: 0 !important; transition: none !important; }',
+      '.layout-header, .layout-room-note, .layout-room-hint, .room-hotspot { opacity: 0 !important; transition: none !important; }',
   };
   const held = await canvas.screenshot(paintingOnly);
   await page.waitForTimeout(250);
   expect((await canvas.screenshot(paintingOnly)).equals(held)).toBe(true);
-  await page
-    .getByRole('button', { name: /Projects/ })
-    .first()
-    .click();
+  await page.locator('[data-collection="projects"]').click();
   await expect(page.getByRole('dialog')).toBeVisible();
 });
 

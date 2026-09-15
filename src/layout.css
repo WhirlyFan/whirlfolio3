@@ -1,0 +1,86 @@
+/* Bespoke room overlays. Reader/navigation styles live with their components. */
+@layer components {
+  .layout-shell {
+    color: var(--ink);
+    background: var(--paper);
+    min-height: 100dvh;
+    font-size: 16px;
+  }
+  .layout-surface {
+    background: var(--cream);
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    box-shadow: var(--shadow-navigation);
+  }
+  .layout-room {
+    position: fixed;
+    inset: 0;
+    width: 100%;
+    height: 100dvh;
+  }
+  .layout-room-note {
+    position: absolute;
+    bottom: 42px;
+    left: 24px;
+    z-index: 10;
+    padding: 18px 22px;
+    border-radius: 16px;
+  }
+  .layout-room-note h2 {
+    font-size: 25px;
+    margin: 0 0 5px;
+    letter-spacing: -0.6px;
+  }
+  .layout-room-note p {
+    margin: 0 0 8px;
+    font-size: 12px;
+    color: var(--muted);
+  }
+  .layout-room-note > span {
+    font:
+      italic 15px Georgia,
+      serif;
+  }
+
+  .layout-room-note h2 {
+    font-family: var(--font-serif);
+    font-weight: 400;
+  }
+  @media (max-width: 1100px) {
+    .layout-room-note {
+      display: none;
+    }
+  }
+  .layout-room-hint {
+    position: absolute;
+    z-index: 10;
+    right: 28px;
+    bottom: max(28px, env(safe-area-inset-bottom));
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0;
+    color: var(--cream);
+    font-size: 12px;
+    font-weight: 500;
+    text-shadow:
+      0 1px 3px var(--ink),
+      0 0 12px var(--ink);
+    pointer-events: none;
+  }
+  .layout-room-hint svg {
+    width: 16px;
+    height: 16px;
+  }
+  @media (max-width: 1100px) {
+    .layout-room-hint {
+      right: 0;
+      left: 0;
+      justify-content: center;
+      bottom: max(86px, calc(env(safe-area-inset-bottom) + 70px));
+    }
+    .layout-room .scene-notice {
+      bottom: 118px;
+    }
+  }
+}

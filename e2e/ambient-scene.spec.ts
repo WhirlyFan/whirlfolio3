@@ -109,7 +109,7 @@ test('new scenery stays still with reduced motion and the portfolio remains reac
   const before = await canvas.screenshot();
   await page.waitForTimeout(400);
   expect(await canvas.screenshot()).toEqual(before);
-  await page.getByRole('button', { name: /Photography/ }).click();
+  await page.locator('[data-collection="photography"]').click();
   await expect(page.getByRole('dialog')).toBeVisible();
   await page.getByRole('button', { name: 'Back to room' }).click();
   await expect(page.getByRole('dialog')).not.toBeVisible();

@@ -16,8 +16,8 @@ for (const viewport of [
     expect(await room.boundingBox()).toEqual({ x: 0, y: 0, ...viewport });
     for (const name of ['Projects', 'Experience', 'Photography', 'About']) {
       const control = page
-        .getByRole('navigation', { name: 'Portfolio collections' })
-        .getByRole('button', { name, exact: true });
+        .getByRole('navigation', { name: 'Portfolio sections', exact: true })
+        .getByRole('link', { name, exact: true });
       await expect(control).toBeInViewport({ ratio: 1 });
       const bounds = await control.boundingBox();
       expect(bounds!.height).toBeGreaterThanOrEqual(44);
@@ -53,20 +53,11 @@ test('the 320px photography reader keeps its title and return control inside the
   await expect(photos).toBeFocused();
 });
 
-test('phone room controls retain motion, quality, and collection return behavior', async ({
-  page,
-}) => {
+test('phone motion preference survives collection reading and return', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/');
   await expect(page.getByTestId('room-stage')).toHaveAttribute('data-ready', 'true');
-  await page.getByRole('button', { name: /Pause motion/ }).click();
-  await expect(page.getByRole('button', { name: /Resume motion/ })).toHaveAttribute(
-    'aria-pressed',
-    'true',
-  );
-  await page.getByRole('combobox', { name: 'Detail' }).click();
-  await page.getByRole('option', { name: 'Low', exact: true }).click();
-  await expect(page.getByRole('combobox', { name: 'Detail' })).toHaveText('Low');
+  await page.emulateMedia({ reducedMotion: 'reduce' });
   const photos = page.locator('[data-collection="photography"]');
   await photos.click();
   await expect(
@@ -75,8 +66,12 @@ test('phone room controls retain motion, quality, and collection return behavior
   await page.getByRole('button', { name: 'Back to room', exact: true }).click();
   await expect(page.getByRole('dialog')).not.toBeVisible();
   await expect(photos).toBeFocused();
-  await expect(page.getByRole('button', { name: /Resume motion/ })).toHaveAttribute(
-    'aria-pressed',
-    'true',
-  );
+  const canvas = page.locator('canvas[data-room-canvas]');
+  const heldTime = await canvas.getAttribute('data-window-time');
+  await page.waitForTimeout(200);
+  expect(await canvas.getAttribute('data-window-time')).toBe(heldTime);
+  await page.emulateMedia({ reducedMotion: 'no-preference' });
+  await expect
+    .poll(async () => Number(await canvas.getAttribute('data-window-time')))
+    .toBeGreaterThan(Number(heldTime));
 });
