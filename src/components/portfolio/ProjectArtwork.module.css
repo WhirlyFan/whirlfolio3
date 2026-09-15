@@ -1,0 +1,67 @@
+/* Illustrations belong to ProjectArtwork, not a page's descendant selectors. */
+@layer components {
+  .record {
+    background: linear-gradient(125deg, #d0ddc4, #a9b99b);
+  }
+  .books {
+    background: linear-gradient(130deg, #d4dfe6, #9ab3bf);
+  }
+  .breeze {
+    background: linear-gradient(140deg, #ede0c9, #d8b889);
+  }
+  .recordDisc {
+    width: 135px;
+    height: 135px;
+    border-radius: 50%;
+    background: repeating-radial-gradient(circle, #34453a 0, #34453a 2px, #3c4e3e 3px, #34453a 4px);
+    display: grid;
+    place-items: center;
+    box-shadow: 10px 13px 0 #7087612e;
+    transform: rotate(-12deg);
+  }
+  .recordDisc span {
+    width: 55px;
+    height: 55px;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    background: #e5c889;
+    font:
+      italic 30px Georgia,
+      serif;
+    color: #536346;
+  }
+  .bookSpines {
+    display: flex;
+    align-items: end;
+    gap: 7px;
+  }
+  .bookSpines i {
+    display: block;
+    width: 32px;
+    height: 92px;
+    background: #f8edd3;
+    border: 4px solid #64899a;
+    border-radius: 4px;
+    box-shadow: 6px 6px 0 #66869b29;
+  }
+  .bookSpines i:nth-child(2) {
+    height: 110px;
+    transform: rotate(9deg);
+    background: #8fa7ba;
+    border-color: #496c83;
+  }
+  .bookSpines i:nth-child(3) {
+    height: 82px;
+    background: #dbc88d;
+    border-color: #9c8852;
+  }
+  .breezeMark {
+    font:
+      150px Georgia,
+      serif;
+    color: #fff3dc;
+    line-height: 1;
+    text-shadow: 5px 6px 0 #b1966e66;
+  }
+}

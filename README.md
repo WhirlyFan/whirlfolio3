@@ -11,9 +11,9 @@ pnpm install --frozen-lockfile
 pnpm dev
 ```
 
-Open the URL printed by Vite. Drag or swipe to explore the room, or focus the canvas and use arrow keys. Click the monitor for projects, the bird frames for photography, or the fan to change its speed. All four collections are available from the room's bottom navigation. The Portfolio tab opens the readable page without loading the room engine.
+Open the URL printed by Vite. Drag or swipe to explore the room, or focus the canvas and use arrow keys. Click the monitor for projects, the bird frames for photography, or the fan to change its speed. Both views share the same navigation: sections at the top on desktop and at the bottom on smaller screens. The Portfolio tab opens the readable page without loading the room engine and restores your reading position when you return.
 
-Pause, reduced-motion preferences and low-detail mode control animation. There is no sound. The fan, curtain, plants, bird, sleeper and dust use one room clock; breathing and bird actions have their own rhythms, while wind-driven elements share the window gust.
+Animation follows the operating system's reduced-motion preference, including changes made while the site is open. Rendering quality is automatic, with capped pixel density on phones. There are no separate fan, pause or detail controls; the painted fan remains clickable. There is no sound. The fan, curtain, plants, bird, sleeper and dust use one room clock; breathing and bird actions have their own rhythms, while wind-driven elements share the window gust.
 
 ## Verify
 
@@ -32,8 +32,13 @@ Browser tests exercise the actual room using Chromium software rendering. They d
 - `src/content/portfolio.ts`: profile, experience, projects, education, research, photo captions and links. Add entries here; new information does not require new room objects.
 - `public/Michael_Lee_Resume.pdf`: the downloadable résumé. Replace this separately when the résumé changes.
 - `public/photos/`: displayed bird photographs and smaller room-frame derivatives. Add photographs and matching entries to the content array.
-- `src/components/`: HTML portfolio, room controls and reading dialogs. Reusable shadcn components live in `src/components/ui/`.
-- `src/styles.css`: shared cream/sage/ink theme, Tailwind and component styles.
+- `src/components/portfolio/`: shared Projects, Experience, Photography, About and Tags components. The page requests `presentation="editorial"`; room dialogs use the default compact presentation. Each component owns its internal styling; its parent owns placement.
+- `src/components/`: shared `SiteHeader`, conventional `PortfolioPage` and room reading dialogs. Reusable shadcn components and button size variants live in `src/components/ui/`.
+- `src/styles.css`: Tailwind v4 theme tokens, base defaults and room/dialog styles. Page/navigation layout uses Tailwind utilities in its components. `src/layout.css` contains only bespoke room overlays. Scoped project illustrations live in `ProjectArtwork.module.css`.
+
+Profile roles have separate `title` and `team` fields; `formatRole` supplies the combined label. Project entries can choose `artwork: 'record' | 'books' | 'breeze'`; leaving it out uses a neutral panel. Photo entries include their actual pixel `width` and `height`. Set `featured: true` on the hero photo; without a featured entry the first photo is used. An empty photo array leaves the portfolio readable with an empty gallery message.
+
+Keep `src/main.tsx`'s global CSS imports before component imports: they establish Tailwind's base/component/utility layer order. Put ordinary styling beside its component; use shared tokens and existing variants before adding values. Keep bespoke illustration CSS scoped and in the components layer so utilities can override it.
 
 ## Update the room
 
@@ -60,4 +65,4 @@ The site builds into `dist/`, uses relative asset paths and hash navigation, and
 
 Deployments are manual, not triggered by every push. No custom domain or `CNAME` is configured here; the existing `whirlyfan.com` site stays unchanged.
 
-This is the first iteration. A more consistent room/portfolio navigation layout and less repetitive bird behavior remain follow-up work.
+This is the first iteration. Less repetitive bird behavior remains follow-up work.

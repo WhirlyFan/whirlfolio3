@@ -360,7 +360,9 @@ test('one projected rotor fills the opening while WhirlyFan identity stays fixed
   ).toBeGreaterThanOrEqual(6);
 });
 
-test('the shared UI clock holds the fan angle while paused and off', async ({ page }) => {
+test('the system motion preference and painted fan control hold the fan angle', async ({
+  page,
+}) => {
   await page.goto('/#room');
   const canvas = page.locator('canvas[data-room-canvas]');
   await expect(page.getByTestId('room-stage')).toHaveAttribute('data-ready', 'true');
@@ -370,14 +372,14 @@ test('the shared UI clock holds the fan angle while paused and off', async ({ pa
     .poll(async () => Number(await canvas.getAttribute('data-fan-angle')))
     .toBeGreaterThan(movingAngle);
 
-  await page.getByRole('button', { name: 'Pause motion' }).click();
+  await page.emulateMedia({ reducedMotion: 'reduce' });
   const pausedAngle = await canvas.getAttribute('data-fan-angle');
   await page.waitForTimeout(180);
   expect(await canvas.getAttribute('data-fan-angle')).toBe(pausedAngle);
 
-  await page.getByRole('button', { name: 'Resume motion' }).click();
-  await page.getByRole('button', { name: 'Fan speed: low' }).click();
-  await page.getByRole('button', { name: 'Fan speed: high' }).click();
+  await page.emulateMedia({ reducedMotion: 'no-preference' });
+  await page.getByRole('button', { name: 'Desk fan', exact: true }).click();
+  await page.getByRole('button', { name: 'Desk fan', exact: true }).click();
   const offAngle = await canvas.getAttribute('data-fan-angle');
   await page.waitForTimeout(180);
   expect(await canvas.getAttribute('data-fan-angle')).toBe(offAngle);

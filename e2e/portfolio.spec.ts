@@ -1,23 +1,35 @@
 import { expect, test } from '@playwright/test';
 
+test('the painted fan announces its changed speed without a separate settings button', async ({
+  page,
+}) => {
+  await page.goto('/#room');
+  await expect(page.getByTestId('room-stage')).toHaveAttribute('data-ready', 'true');
+  const fan = page.getByRole('button', { name: 'Desk fan', exact: true });
+  await fan.focus();
+  await page.keyboard.press('Enter');
+  await expect(page.getByRole('status', { name: 'Fan setting' })).toHaveText('Fan speed: high');
+  await page.keyboard.press('Enter');
+  await expect(page.getByRole('status', { name: 'Fan setting' })).toHaveText('Fan speed: off');
+  await page.keyboard.press('Enter');
+  await expect(page.getByRole('status', { name: 'Fan setting' })).toHaveText('Fan speed: low');
+});
+
 test('explores real room actions and returns from project reading', async ({ page }) => {
   const errors: string[] = [];
   page.on('pageerror', (error) => errors.push(error.message));
   await page.goto('/');
   await expect(page.locator('canvas[data-room-canvas]')).toBeVisible();
   await expect(page.getByTestId('room-stage')).toHaveAttribute('data-ready', 'true');
-  await page.getByRole('button', { name: 'Projects', exact: true }).first().click();
+  await page.locator('[data-collection="projects"]').click();
   await expect(page.getByRole('dialog')).toBeVisible();
   await expect(
     page.getByRole('dialog').getByRole('heading', { name: 'Music', exact: true }),
   ).toBeVisible();
   await page.keyboard.press('Escape');
   await expect(page.getByRole('dialog')).not.toBeVisible();
-  await page.getByRole('button', { name: /Fan speed/ }).click();
-  await expect(page.getByRole('button', { name: /Fan speed/ })).toHaveAccessibleName(
-    'Fan speed: high',
-  );
-  await page.getByRole('button', { name: 'Photography', exact: true }).first().click();
+  await page.getByRole('button', { name: 'Desk fan', exact: true }).click();
+  await page.locator('[data-collection="photography"]').click();
   await expect(page.getByRole('dialog').getByAltText(/gull gliding/i)).toBeVisible();
   expect(errors).toEqual([]);
 });
@@ -38,27 +50,29 @@ test('conventional portfolio remains complete and directly linkable', async ({ p
   await expect(page.locator('canvas')).toHaveCount(0);
 });
 
-test('motion visibly changes the room and pause holds the rendered frame', async ({ page }) => {
+test('system reduced motion holds the actual rendered frame and turning it off resumes motion', async ({
+  page,
+}) => {
   // Software-rendered CI captures can take over 10 seconds per canvas screenshot.
   test.setTimeout(60_000);
   await page.goto('/');
   await expect(page.getByTestId('room-stage')).toHaveAttribute('data-ready', 'true');
   const canvas = page.locator('canvas[data-room-canvas]');
-  await page.getByRole('button', { name: 'Pause motion' }).click();
+  await page.emulateMedia({ reducedMotion: 'reduce' });
   // Let the final scheduled draw and photo loads finish before comparing pixels.
   await page.waitForTimeout(500);
   // The full-bleed canvas bounds also contain HTML controls. Exclude their hover
-  // transitions so this verifies room motion, not changes in the Resume button.
+  // transitions so this verifies room motion, not navigation hover changes.
   const paintingOnly = {
     style:
-      '.room-header, .room-dock, .room-hotspot { opacity: 0 !important; transition: none !important; }',
+      '.layout-header, .layout-room-note, .layout-room-hint, .room-hotspot { opacity: 0 !important; transition: none !important; }',
   };
   const heldTime = await canvas.getAttribute('data-window-time');
   const still = await canvas.screenshot(paintingOnly);
   await page.waitForTimeout(300);
   expect(await canvas.getAttribute('data-window-time')).toBe(heldTime);
   expect((await canvas.screenshot(paintingOnly)).equals(still)).toBe(true);
-  await page.getByRole('button', { name: 'Resume motion' }).click();
+  await page.emulateMedia({ reducedMotion: 'no-preference' });
   await expect
     .poll(async () => Number(await canvas.getAttribute('data-window-time')))
     .toBeGreaterThan(Number(heldTime));
@@ -91,8 +105,11 @@ test('narrow reduced-motion view exposes readable content without overflow', asy
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await page.goto('/');
   await expect(page.getByTestId('room-stage')).toHaveAttribute('data-ready', 'true');
-  await expect(page.getByText('Reduced motion', { exact: true })).toBeVisible();
-  await page.getByRole('button', { name: 'Experience', exact: true }).first().click();
+  const canvas = page.locator('canvas[data-room-canvas]');
+  const heldTime = await canvas.getAttribute('data-window-time');
+  await page.waitForTimeout(180);
+  expect(await canvas.getAttribute('data-window-time')).toBe(heldTime);
+  await page.locator('[data-collection="experience"]').click();
   await expect(
     page.getByRole('dialog').getByRole('heading', { name: 'Handshake', exact: true }),
   ).toBeVisible();

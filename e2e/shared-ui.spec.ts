@@ -88,9 +88,7 @@ test('the skip link focuses the default portfolio heading', async ({ page }) => 
   await skipLink.focus();
   await page.keyboard.press('Enter');
 
-  await expect(
-    page.getByRole('heading', { name: /Thoughtful software\. A curious eye\./ }),
-  ).toBeFocused();
+  await expect(page.locator('#portfolio-heading')).toBeFocused();
 });
 
 test('continuing from a dialog focuses the matching full-portfolio heading', async ({ page }) => {

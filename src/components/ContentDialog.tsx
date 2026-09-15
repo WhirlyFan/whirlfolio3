@@ -1,5 +1,5 @@
 import { useEffect, useLayoutEffect, useRef } from 'react';
-import { sections } from '../content/portfolio';
+import { profile, sections } from '../content/portfolio';
 import type { SectionId } from '../room/types';
 import { PortfolioContent } from './PortfolioContent';
 import { Button } from './ui/button';
@@ -79,7 +79,7 @@ export function ContentDialog({
                 {meta.title}
               </DialogTitle>
               <DialogDescription className="sr-only">
-                {meta.title} from Michael Lee’s portfolio.
+                {meta.title} from {profile.name}’s portfolio.
               </DialogDescription>
             </div>
             <Button
