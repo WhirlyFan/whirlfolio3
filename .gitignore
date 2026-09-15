@@ -1,0 +1,29 @@
+# Publish only the application, its current assets, and required tests/configuration.
+# Research, reference photos, memory, screenshots and archives stay local.
+/*
+!/.gitignore
+!/.prettierrc.json
+!/README.md
+!/components.json
+!/index.html
+!/package.json
+!/pnpm-lock.yaml
+!/tsconfig.json
+!/vite.config.ts
+!/playwright.config.ts
+!/.github/
+!/src/
+!/tests/
+!/e2e/
+!/public/
+
+node_modules/
+dist/
+test-results/
+playwright-report/
+.DS_Store
+.env
+.env.*
+*.pem
+*.key
+*.log
