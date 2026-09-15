@@ -107,5 +107,8 @@ test('continuing from a dialog focuses the matching full-portfolio heading', asy
   await fullPortfolioLink.focus();
   await page.keyboard.press('Enter');
 
-  await expect(page.locator('#projects').getByRole('heading', { name: 'Projects' })).toBeFocused();
+  // CI can take several seconds to leave the software-rendered room and commit the new view.
+  await expect(page.locator('#projects').getByRole('heading', { name: 'Projects' })).toBeFocused({
+    timeout: 15_000,
+  });
 });

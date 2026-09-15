@@ -39,6 +39,8 @@ test('conventional portfolio remains complete and directly linkable', async ({ p
 });
 
 test('motion visibly changes the room and pause holds the rendered frame', async ({ page }) => {
+  // Software-rendered CI captures can take over 10 seconds per canvas screenshot.
+  test.setTimeout(60_000);
   await page.goto('/');
   await expect(page.getByTestId('room-stage')).toHaveAttribute('data-ready', 'true');
   const canvas = page.locator('canvas[data-room-canvas]');
@@ -60,7 +62,9 @@ test('motion visibly changes the room and pause holds the rendered frame', async
   await expect
     .poll(async () => Number(await canvas.getAttribute('data-window-time')))
     .toBeGreaterThan(Number(heldTime));
-  await expect.poll(async () => (await canvas.screenshot(paintingOnly)).equals(still)).toBe(false);
+  await expect
+    .poll(async () => (await canvas.screenshot(paintingOnly)).equals(still), { timeout: 20_000 })
+    .toBe(false);
 });
 
 test('clicking the monitor surface uses the scene hit-test, not a hotspot button', async ({
