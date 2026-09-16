@@ -3,8 +3,19 @@ import { getPixelRatio, shouldAnimate, type Quality } from '../policy';
 import type { RoomAction, RoomAnimationState, SectionId } from '../types';
 import { loadArtwork, sceneSize } from './assets';
 import { createPaintedScene } from './scene';
-import { constrainCenter, fitScene } from './layout';
+import { constrainCenter, fitScene, getPanAxes, type PanAxes } from './layout';
 import { advanceMotion, type MotionClock } from './motion';
+import {
+  advanceCamera,
+  cameraAt,
+  cameraBounds,
+  cameraSettled,
+  elasticCamera,
+  releaseVelocity,
+  sampleDrag,
+  type CameraMotion,
+  type DragSample,
+} from './camera';
 
 // This lazy module is the application's only Pixi consumer. Our owned frame loop
 // replaces the shared event/maintenance ticker; all scene resources are disposed
@@ -27,6 +38,7 @@ interface Options {
   onAction(action: RoomAction): void;
   onReady(): void;
   onError(message: string): void;
+  onPanAxesChange?(axes: PanAxes): void;
 }
 
 /** The only owner of rendering, async artwork, input, observer and animation lifetimes. */
@@ -51,25 +63,30 @@ export async function mountRoom(host: HTMLElement, options: Options): Promise<Ro
   const canvas = document.createElement('canvas');
   canvas.dataset.roomCanvas = '';
   canvas.dataset.renderer = 'pixi';
-  canvas.setAttribute(
-    'aria-label',
-    'Painted summer room. Drag or use arrow keys to look around. Use the named object buttons to explore.',
-  );
-  canvas.tabIndex = 0;
   let view = { width: 1, height: 1 };
+  let panAxes: PanAxes = { x: false, y: false };
   let zoom = 1;
   let desiredZoom = 1;
   let center = { x: sceneSize.width / 2, y: sceneSize.height / 2 };
   let desiredCenter = { ...center };
   let overviewCenter = { x: sceneSize.width / 2, y: sceneSize.height / 2 };
   let firstResize = true;
+  let cameraMotion: CameraMotion | null = null;
   let pointerStart: {
     x: number;
     y: number;
     id: number;
     center: typeof center;
     dragged: boolean;
+    samples: DragSample[];
   } | null = null;
+
+  function canPan() {
+    return panAxes.x || panAxes.y;
+  }
+  function restingCursor() {
+    return canPan() ? 'grab' : 'default';
+  }
 
   function bounded(point: typeof center, cameraZoom = desiredZoom) {
     const fit = fitScene(view.width, view.height, sceneSize.width, sceneSize.height);
@@ -100,11 +117,23 @@ export async function mountRoom(host: HTMLElement, options: Options): Promise<Ro
     const delta = animate && previousMs !== null ? (timestampMs - previousMs) / 1000 : 0;
     previousMs = timestampMs;
     clock = advanceMotion(clock, delta, { ...state, paused: !animate });
-    const blend = animate ? 1 - Math.exp(-Math.min(delta, 0.05) * 6) : 1;
-    zoom += (desiredZoom - zoom) * blend;
-    center.x += (desiredCenter.x - center.x) * blend;
-    center.y += (desiredCenter.y - center.y) * blend;
-    center = bounded(center, zoom);
+    if (cameraMotion && !section) {
+      if (!pointerStart && animate) {
+        cameraMotion = advanceCamera(cameraMotion, cameraBounds(view, sceneSize), delta);
+      }
+      const elastic = elasticCamera(cameraMotion.position, view, sceneSize);
+      center = elastic.center;
+      zoom = elastic.zoom;
+      overviewCenter = bounded(cameraMotion.position, 1);
+      desiredCenter = { ...overviewCenter };
+      if (!pointerStart && cameraSettled(cameraMotion)) cameraMotion = null;
+    } else {
+      const blend = animate ? 1 - Math.exp(-Math.min(delta, 0.05) * 6) : 1;
+      zoom += (desiredZoom - zoom) * blend;
+      center.x += (desiredCenter.x - center.x) * blend;
+      center.y += (desiredCenter.y - center.y) * blend;
+      center = bounded(center, zoom);
+    }
     const fit = fitScene(view.width, view.height, sceneSize.width, sceneSize.height);
     scene.container.scale.set(fit.scale * zoom);
     scene.container.position.set(
@@ -134,6 +163,7 @@ export async function mountRoom(host: HTMLElement, options: Options): Promise<Ro
     if (animate) frame = requestAnimationFrame(draw);
   }
   function activate(action: RoomAction) {
+    cancelCamera();
     options.onAction(action);
     invalidate();
   }
@@ -147,13 +177,16 @@ export async function mountRoom(host: HTMLElement, options: Options): Promise<Ro
     return scene.targets.find((target) => target.area.contains(point.x, point.y))?.id ?? null;
   }
   function pointerDown(event: PointerEvent) {
-    if (event.button === 0 && !section) {
+    if (event.button === 0 && event.isPrimary && !section && !pointerStart) {
+      const position = cameraMotion?.position ?? center;
+      cameraMotion = canPan() && moving() ? cameraAt(position) : null;
       pointerStart = {
         x: event.clientX,
         y: event.clientY,
         id: event.pointerId,
-        center: { ...center },
+        center: { ...position },
         dragged: false,
+        samples: [{ position: { ...position }, timeMs: event.timeStamp }],
       };
       canvas.setPointerCapture(event.pointerId);
     }
@@ -164,26 +197,54 @@ export async function mountRoom(host: HTMLElement, options: Options): Promise<Ro
       const dy = event.clientY - pointerStart.y;
       if (pointerStart.dragged || Math.hypot(dx, dy) > 10) {
         pointerStart.dragged = true;
+        // Keep the drag/click distinction even when the complete room is visible.
+        if (!canPan()) return;
         const fit = fitScene(view.width, view.height, sceneSize.width, sceneSize.height);
-        overviewCenter = bounded({
-          x: pointerStart.center.x - dx / fit.scale,
-          y: pointerStart.center.y - dy / fit.scale,
-        });
-        center = desiredCenter = { ...overviewCenter };
+        const position = {
+          x: pointerStart.center.x - (panAxes.x ? dx / fit.scale : 0),
+          y: pointerStart.center.y - (panAxes.y ? dy / fit.scale : 0),
+        };
+        pointerStart.samples = sampleDrag(pointerStart.samples, position, event.timeStamp);
+        overviewCenter = bounded(position, 1);
+        desiredCenter = { ...overviewCenter };
+        if (moving()) cameraMotion = cameraAt(position);
+        else center = { ...overviewCenter };
         canvas.style.cursor = 'grabbing';
         invalidate();
         return;
       }
     }
-    canvas.style.cursor = hit(event) ? 'pointer' : 'grab';
+    canvas.style.cursor = hit(event) ? 'pointer' : restingCursor();
   }
-  function pointerCancel() {
+  function cancelCamera() {
+    const pointer = pointerStart;
     pointerStart = null;
+    if (pointer && canvas.hasPointerCapture(pointer.id)) canvas.releasePointerCapture(pointer.id);
+    if (cameraMotion) {
+      overviewCenter = bounded(cameraMotion.position, 1);
+      desiredCenter = { ...overviewCenter };
+      center = { ...overviewCenter };
+      zoom = desiredZoom = 1;
+      cameraMotion = null;
+    }
+    canvas.style.cursor = restingCursor();
+  }
+  function pointerCancel(event: PointerEvent) {
+    if (pointerStart?.id !== event.pointerId) return;
+    cancelCamera();
+    invalidate();
   }
   function pointerUp(event: PointerEvent) {
     const start = pointerStart;
+    if (!start || start.id !== event.pointerId) return;
     pointerStart = null;
     if (canvas.hasPointerCapture(event.pointerId)) canvas.releasePointerCapture(event.pointerId);
+    canvas.style.cursor = restingCursor();
+    if (start.dragged && cameraMotion) {
+      const fit = fitScene(view.width, view.height, sceneSize.width, sceneSize.height);
+      cameraMotion.velocity = releaseVelocity(start.samples, event.timeStamp, fit.scale);
+      invalidate();
+    }
     if (
       !start ||
       start.dragged ||
@@ -203,8 +264,9 @@ export async function mountRoom(host: HTMLElement, options: Options): Promise<Ro
       ArrowDown: [0, 120],
     };
     const direction = directions[event.key];
-    if (!direction) return;
+    if (!direction || (!panAxes.x && direction[0]) || (!panAxes.y && direction[1])) return;
     event.preventDefault();
+    cancelCamera();
     overviewCenter = bounded({
       x: overviewCenter.x + direction[0],
       y: overviewCenter.y + direction[1],
@@ -214,7 +276,27 @@ export async function mountRoom(host: HTMLElement, options: Options): Promise<Ro
   }
   function resize() {
     if (disposed) return;
+    cancelCamera();
     view = { width: Math.max(1, host.clientWidth), height: Math.max(1, host.clientHeight) };
+    const nextAxes = getPanAxes(view.width, view.height, sceneSize.width, sceneSize.height);
+    if (panAxes.x !== nextAxes.x || panAxes.y !== nextAxes.y) {
+      panAxes = nextAxes;
+      options.onPanAxesChange?.(panAxes);
+    }
+    canvas.style.cursor = restingCursor();
+    // Let the browser own gestures on axes that do not explore cropped artwork.
+    canvas.style.touchAction = panAxes.x
+      ? panAxes.y
+        ? 'none'
+        : 'pan-y'
+      : panAxes.y
+        ? 'pan-x'
+        : 'auto';
+    canvas.tabIndex = canPan() ? 0 : -1;
+    canvas.setAttribute(
+      'aria-label',
+      `Painted summer room. ${canPan() ? 'Drag left or right, or use the left and right arrow keys to look around. ' : ''}Use the named object buttons to explore.`,
+    );
     if (firstResize) {
       // Start on the desk/portfolio invitation when the wide painting is cropped.
       // Landscape screens wide enough for the whole room clamp back to its center.
@@ -245,6 +327,7 @@ export async function mountRoom(host: HTMLElement, options: Options): Promise<Ro
     });
   }
   function visibilityChanged() {
+    cancelCamera();
     cancelAnimationFrame(frame);
     frame = 0;
     previousMs = null;
@@ -267,6 +350,7 @@ export async function mountRoom(host: HTMLElement, options: Options): Promise<Ro
     canvas.removeEventListener('pointermove', pointerMove);
     canvas.removeEventListener('pointerup', pointerUp);
     canvas.removeEventListener('pointercancel', pointerCancel);
+    canvas.removeEventListener('lostpointercapture', pointerCancel);
     canvas.removeEventListener('keydown', keyDown);
     canvas.removeEventListener('webglcontextlost', contextLost);
     buttons.forEach((button) => button.remove());
@@ -297,7 +381,8 @@ export async function mountRoom(host: HTMLElement, options: Options): Promise<Ro
       width: 1,
       height: 1,
       antialias: false,
-      backgroundColor: '#eee9d9',
+      // Edge overpull reveals the same paper color as the surrounding portfolio.
+      backgroundColor: getComputedStyle(host).getPropertyValue('--paper').trim(),
       autoDensity: true,
       powerPreference: 'low-power',
       gcActive: false,
@@ -335,6 +420,7 @@ export async function mountRoom(host: HTMLElement, options: Options): Promise<Ro
     canvas.addEventListener('pointermove', pointerMove);
     canvas.addEventListener('pointerup', pointerUp);
     canvas.addEventListener('pointercancel', pointerCancel);
+    canvas.addEventListener('lostpointercapture', pointerCancel);
     canvas.addEventListener('keydown', keyDown);
     canvas.addEventListener('webglcontextlost', contextLost);
     document.addEventListener('visibilitychange', visibilityChanged);
@@ -349,11 +435,13 @@ export async function mountRoom(host: HTMLElement, options: Options): Promise<Ro
       setState(next) {
         const qualityChanged = state.quality !== next.quality;
         state = { ...next };
+        if (!moving()) cancelCamera();
         previousMs = null;
         if (qualityChanged) resize();
         invalidate();
       },
       focus(next) {
+        cancelCamera();
         section = next;
         updateFocus();
         invalidate();

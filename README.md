@@ -47,8 +47,11 @@ Keep `src/main.tsx`'s global CSS imports before component imports: they establis
 - `assets.ts`: the 11 runtime art/photo paths and illustration-space positions.
 - `scene.ts`, `runtime.ts`, `layout.ts`: layers, interactions, viewport fitting, loading and cleanup.
 - `motion.ts`, `window-wind.ts`: shared time and wind; individual fan, sleeper and ambient modules define each object's response.
+- `camera.ts`, `camera-constants.ts`: drag velocity, elapsed-time glide and spring return. Edge pulls keep a fixed scale and briefly reveal up to 24 CSS pixels of the theme's warm paper backdrop per edge before springing back. The renderer reads `--paper` from the shared CSS theme on mount. Tune motion independently from ambient wind and breathing.
 - `discovery.ts`, `surface-registration.ts`: monitor/photo perspective, labels and click areas.
 - `lighting.ts`, `lighting-math.ts`, `window-registration.ts`: art-directed window-light projections and surface coverage.
+
+Interaction motion stays in the existing room frame loop. Panning, glide and rebound are horizontal-only and require artwork cropped off the left/right edges, as on phones. Up/down dragging never moves the room, including on wide landscape screens. The cursor, keyboard controls, touch gesture policy and drag hint follow horizontal crop, not a device breakpoint. Re-grabbing, cancellation, navigation, resize and hiding the tab stop stale momentum. Reduced motion retains direct panning without glide or rebound. Shared UI feedback lives in `components/ui/button-ripple.tsx`; button and dialog easing use the `ease-out-quint` Tailwind token. Ripples are decorative, clipped inside controls, and do not delay links or keyboard actions.
 
 `public/art/` contains only current production artwork. The ball, keyboard, guitar and longboard are integrated into the background; moving objects are separate textures. `summer-room-v11.svg` contains the base painting and a small transparent ball repair, decoded once into one texture. When replacing artwork, keep its illustration-space registration and update the corresponding masks and tests. The camera file's historical name, `tripod-reference-v4.webp`, refers to generated production art, not a reference photograph.
 

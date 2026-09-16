@@ -1,5 +1,4 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
-import { MoveHorizontal } from 'lucide-react';
 import { parseHash, toHash, type Navigation } from './app/navigation';
 import { formatRole, profile, sections } from './content/portfolio';
 import { RoomViewport } from './components/RoomViewport';
@@ -125,10 +124,6 @@ export default function App() {
             </p>
             <span>A slow summer afternoon.</span>
           </aside>
-          <p className="layout-room-hint">
-            <MoveHorizontal aria-hidden="true" />
-            <span>Drag or swipe to look around</span>
-          </p>
           <ContentDialog section={navigation.section} onClose={() => go(null)} />
         </main>
       ) : (
