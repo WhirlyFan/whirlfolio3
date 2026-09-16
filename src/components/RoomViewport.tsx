@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
+import { MoveHorizontal } from 'lucide-react';
 import type { RoomAction, SectionId } from '../room/types';
 import type { RoomRuntime, RuntimeState } from '../room/pixi/runtime';
+import type { PanAxes } from '../room/pixi/layout';
 
 interface Props {
   state: RuntimeState;
@@ -14,6 +16,8 @@ export function RoomViewport({ state, section, onAction }: Props) {
   latest.current = { state, section, onAction };
   const [ready, setReady] = useState(false);
   const [error, setError] = useState('');
+  const [panAxes, setPanAxes] = useState<PanAxes>({ x: false, y: false });
+  const showPanHint = ready && !error && !section && (panAxes.x || panAxes.y);
   useEffect(() => {
     let canceled = false;
     const controller = new AbortController();
@@ -24,6 +28,9 @@ export function RoomViewport({ state, section, onAction }: Props) {
           signal: controller.signal,
           initialState: latest.current.state,
           onAction: (action) => latest.current.onAction(action),
+          onPanAxesChange: (axes) => {
+            if (!canceled) setPanAxes(axes);
+          },
           onReady: () => {
             if (!canceled) setReady(true);
           },
@@ -60,6 +67,12 @@ export function RoomViewport({ state, section, onAction }: Props) {
   return (
     <div className="room-stage" data-testid="room-stage" data-ready={ready}>
       <div className="room-canvas-host" ref={host} />
+      {showPanHint && (
+        <p className="layout-room-hint">
+          <MoveHorizontal aria-hidden="true" />
+          <span>Drag or swipe to look around</span>
+        </p>
+      )}
       {!ready && !error && (
         <div className="room-loading" role="status">
           <span className="loading-fan">✳</span>

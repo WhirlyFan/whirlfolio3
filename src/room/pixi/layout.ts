@@ -1,3 +1,25 @@
+export interface PanAxes {
+  x: boolean;
+  y: boolean;
+}
+
+// Ignore subpixel cover-fit rounding, not an actual offscreen portion of the room.
+const MIN_PAN_OVERFLOW_PX = 1;
+
+export function getPanAxes(
+  width: number,
+  height: number,
+  sceneWidth: number,
+  sceneHeight: number,
+): PanAxes {
+  const { scale } = fitScene(width, height, sceneWidth, sceneHeight);
+  return {
+    x: sceneWidth * scale - width > MIN_PAN_OVERFLOW_PX,
+    // Exploration is horizontal-only; vertical framing belongs to reading transitions.
+    y: false,
+  };
+}
+
 export function fitScene(
   width: number,
   height: number,

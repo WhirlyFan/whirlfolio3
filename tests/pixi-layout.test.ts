@@ -1,5 +1,16 @@
 import { expect, it } from 'vitest';
-import { fitScene, constrainCenter } from '../src/room/pixi/layout';
+import { fitScene, constrainCenter, getPanAxes } from '../src/room/pixi/layout';
+
+it.each([
+  [1600, 900, { x: false, y: false }],
+  [800, 450, { x: false, y: false }],
+  [1600, 900.1, { x: false, y: false }],
+  [390, 844, { x: true, y: false }],
+  [1440, 1000, { x: true, y: false }],
+  [844, 390, { x: false, y: false }],
+])('only enables horizontal exploration of cropped artwork at %s×%s', (width, height, axes) => {
+  expect(getPanAxes(width, height, 1600, 900)).toEqual(axes);
+});
 
 it('fills the viewport without distorting or letterboxing the painting', () => {
   const result = fitScene(800, 600, 1600, 900);
