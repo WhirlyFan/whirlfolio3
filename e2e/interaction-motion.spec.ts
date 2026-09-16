@@ -32,6 +32,8 @@ for (const reducedMotion of ['no-preference', 'reduce'] as const) {
   test(`the uncropped room stays fixed while objects remain clickable (${reducedMotion})`, async ({
     page,
   }) => {
+    // Software-rendered CI needs time for both real focus transitions and actionability checks.
+    test.setTimeout(60_000);
     await page.setViewportSize({ width: 1600, height: 900 });
     await page.emulateMedia({ reducedMotion });
     await page.goto('/#room');
@@ -188,10 +190,43 @@ for (const viewport of [
 
 test('a released room drag glides, and grabbing it again stops that glide', async ({ page }) => {
   await openRoom(page);
-  await pull(page, 90, 225);
-  await page.mouse.up();
-  const released = await projectX(page);
-  await expect.poll(() => projectX(page)).toBeGreaterThan(released + 12);
+  const initial = await projectX(page);
+  const session = await page.context().newCDPSession(page);
+  const startedAtSeconds = Date.now() / 1000;
+  // Timestamp trusted browser input: slow CI command delivery must not turn a flick into a hold.
+  await session.send('Input.dispatchMouseEvent', {
+    type: 'mousePressed',
+    x: 90,
+    y: 600,
+    button: 'left',
+    buttons: 1,
+    clickCount: 1,
+    timestamp: startedAtSeconds,
+  });
+  for (let step = 1; step <= 6; step++) {
+    await session.send('Input.dispatchMouseEvent', {
+      type: 'mouseMoved',
+      x: 90 + step * 22.5,
+      y: 600,
+      button: 'left',
+      buttons: 1,
+      timestamp: startedAtSeconds + step * 0.016,
+    });
+  }
+  await expect.poll(() => projectX(page)).toBeCloseTo(initial + 135, 1);
+  const held = await projectX(page);
+  await session.send('Input.dispatchMouseEvent', {
+    type: 'mouseReleased',
+    x: 225,
+    y: 600,
+    button: 'left',
+    buttons: 0,
+    clickCount: 1,
+    timestamp: startedAtSeconds + 0.112,
+  });
+  await expect.poll(() => projectX(page)).toBeGreaterThan(held + 12);
+  await session.detach();
+  await page.mouse.move(225, 600);
   await page.mouse.down();
   const grabbed = await projectX(page);
   await page.waitForTimeout(350);
@@ -228,6 +263,8 @@ for (const viewport of [
   test(`edge dragging reveals the theme backdrop and springs back without zooming at ${viewport.width}px`, async ({
     page,
   }) => {
+    // Keep both actual pixel checks; allow the CI software renderer to capture them.
+    test.setTimeout(60_000);
     await page.setViewportSize(viewport);
     await page.emulateMedia({ reducedMotion: 'reduce' });
     await page.goto('/#room');
