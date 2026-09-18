@@ -1,7 +1,9 @@
 name: Deploy portfolio to GitHub Pages
 
-# Manual launch only. Adding this workflow does not replace the existing site.
+# Publish verified main updates; keep manual runs available.
 on:
+  push:
+    branches: [main]
   workflow_dispatch:
 
 permissions:

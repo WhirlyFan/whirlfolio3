@@ -3,8 +3,9 @@ import type { Quality } from '../policy';
 import { placement, type loadArtwork } from './assets';
 import { createWindowForeground } from './window-registration';
 import { sourceToScene } from './surface-registration';
+import { createBirdBehavior } from './bird-behavior';
+import { birdFrames as birdRegistration, birdFrameWidth } from './bird-frames';
 import {
-  birdPose,
   foliageOffset,
   maxMotes,
   moteCount,
@@ -20,7 +21,10 @@ export interface AmbientState {
 }
 
 /** Separable scenery only. The parent scene owns children; the loader owns bitmap sources. */
-export function createAmbient(textures: Awaited<ReturnType<typeof loadArtwork>>['textures']) {
+export function createAmbient(
+  textures: Awaited<ReturnType<typeof loadArtwork>>['textures'],
+  birdSeed?: number,
+) {
   const container = new Container({ label: 'room-ambient' });
   // Outside foliage and its opaque window foreground precede every indoor plant.
   const gardenWindow = new Container();
@@ -91,19 +95,24 @@ export function createAmbient(textures: Awaited<ReturnType<typeof loadArtwork>>[
   gardenWindow.addChild(outdoorBranch, windowOpening, createWindowForeground(textures.background));
   const outdoorBranchRest = outdoorBranch.geometry.positions.slice();
 
-  // The wing-up tips extend above the nominal second row; this boundary preserves them.
-  const birdFrames = Array.from(
-    { length: 6 },
-    (_, index) =>
+  const birdPose = createBirdBehavior(birdSeed);
+  const birdFrames = birdRegistration.map(
+    ({ rect }) =>
       new Texture({
         source: textures.bird.source,
-        frame: new Rectangle((index % 3) * 256, index < 3 ? 0 : 225, 256, index < 3 ? 225 : 287),
+        frame: new Rectangle(...rect),
       }),
   );
   const shadow = new Graphics().ellipse(0, 0, 17, 2.4).fill({ color: '#584d36', alpha: 0.18 });
   shadow.position.set(placement.bird.x + 3, placement.bird.y + 1);
-  const bird = new Sprite(birdFrames[0]);
-  container.addChild(shadow, bird);
+  const bird = new Sprite({ texture: birdFrames[0], label: 'room-bird' });
+  // Flight is outside the central opening; low wing tips must pass behind the sill.
+  // Perched feet stay on its front edge, so only airborne poses use this clip.
+  const birdFlightMask = new Graphics()
+    .poly(sourceToScene([544, 39, 1130, 40, 1130, 456, 542, 458]))
+    .fill(0xffffff);
+  container.addChild(shadow, bird, birdFlightMask);
+  birdFlightMask.visible = false;
 
   // Small geometry, allocated once; no particle engine, filters, or per-frame spawning.
   const motes = Array.from({ length: maxMotes }, (_, index) => {
@@ -163,9 +172,13 @@ export function createAmbient(textures: Awaited<ReturnType<typeof loadArtwork>>[
       }
       const pose = birdPose(timeSeconds);
       bird.texture = birdFrames[pose.frame];
-      bird.anchor.set(0.38, pose.flying ? 0.68 : 0.916);
-      const scale = (placement.bird.width / 256) * pose.scale;
+      bird.pivot.set(...birdRegistration[pose.frame].foot);
+      const scale = (placement.bird.width / birdFrameWidth) * pose.scale;
       bird.scale.set(scale * pose.direction, scale * pose.breathScale);
+      bird.rotation = pose.rotation;
+      const flightMask = pose.flying ? birdFlightMask : null;
+      if (bird.mask !== flightMask) bird.mask = flightMask;
+      birdFlightMask.visible = pose.flying;
       bird.position.set(placement.bird.x + pose.x, placement.bird.y + pose.y);
       bird.alpha = pose.alpha;
       bird.visible = pose.visible;

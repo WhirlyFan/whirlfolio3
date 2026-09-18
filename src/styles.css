@@ -37,6 +37,7 @@
   --color-project-art: #dce5d1;
   --shadow-navigation: 0 2px 10px #30423808;
   --spacing-page-gutter: clamp(24px, 5vw, 80px);
+  --breakpoint-compact: 23.8125rem;
   --breakpoint-reader: 47.5625rem;
   --breakpoint-wide: 68.8125rem;
   --ease-out-quint: cubic-bezier(0.22, 1, 0.36, 1);

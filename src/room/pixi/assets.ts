@@ -11,7 +11,7 @@ export const artwork = {
   fan: asset('art/fan-empty-v2.svg'),
   foliage: asset('art/foliage-atlas-v1.webp'),
   trailing: asset('art/trailing-atlas-v1.webp'),
-  bird: asset('art/dove-atlas-v1.webp'),
+  bird: asset('art/dove-atlas-v2.webp'),
   gull: asset('photos/gull-room.webp'),
   dovePhoto: asset('photos/dove-room.webp'),
 };

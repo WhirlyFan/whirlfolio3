@@ -13,6 +13,8 @@ pnpm dev
 
 Open the URL printed by Vite. Drag or swipe to explore the room, or focus the canvas and use arrow keys. Click the monitor for projects, the bird frames for photography, or the fan to change its speed. Both views share the same navigation: sections at the top on desktop and at the bottom on smaller screens. The Portfolio tab opens the readable page without loading the room engine and restores your reading position when you return.
 
+The labeled Résumé download is always available in that shared navigation, including while the room loads or if its artwork cannot load. It downloads the same PDF as the reading view without leaving the room.
+
 Animation follows the operating system's reduced-motion preference, including changes made while the site is open. Rendering quality is automatic, with capped pixel density on phones. There are no separate fan, pause or detail controls; the painted fan remains clickable. There is no sound. The fan, curtain, plants, bird, sleeper and dust use one room clock; breathing and bird actions have their own rhythms, while wind-driven elements share the window gust.
 
 ## Verify
@@ -47,6 +49,8 @@ Keep `src/main.tsx`'s global CSS imports before component imports: they establis
 - `assets.ts`: the 11 runtime art/photo paths and illustration-space positions.
 - `scene.ts`, `runtime.ts`, `layout.ts`: layers, interactions, viewport fitting, loading and cleanup.
 - `motion.ts`, `window-wind.ts`: shared time and wind; individual fan, sleeper and ambient modules define each object's response.
+- `bird-behavior.ts`: seeded action selection, quiet holds and flight cooldowns. Each visit shuffles six idle actions, excludes the last two choices, and varies their durations. Flights wait 120–210 seconds after landing, then finish the current action/hold. `bird-frames.ts` registers the 16 painted poses and foot pivots; update these together when replacing the dove sheet. There is no fixed repeating timeline or additional animation loop.
+- `bird-flight.ts`: three authored garden curves, shuffled without consecutive departure repeats. Returns use a different route after 8–16 seconds away, ease into the same sill perch and retain their landing direction. Edit the curve control points here; keep their full wing bounds inside the garden opening. Flight clipping keeps wing tips behind the sill without cutting off perched feet.
 - `camera.ts`, `camera-constants.ts`: drag velocity, elapsed-time glide and spring return. Edge pulls keep a fixed scale and briefly reveal up to 24 CSS pixels of the theme's warm paper backdrop per edge before springing back. The renderer reads `--paper` from the shared CSS theme on mount. Tune motion independently from ambient wind and breathing.
 - `discovery.ts`, `surface-registration.ts`: monitor/photo perspective, labels and click areas.
 - `lighting.ts`, `lighting-math.ts`, `window-registration.ts`: art-directed window-light projections and surface coverage.
@@ -63,9 +67,9 @@ The site builds into `dist/`, uses relative asset paths and hash navigation, and
 
 1. Push verified changes to `WhirlyFan/whirlfolio3` using the WhirlyFan account.
 2. In repository Settings → Pages, use **GitHub Actions** as the publishing source.
-3. Run **Deploy portfolio to GitHub Pages** from the Actions tab. The manual workflow installs locked dependencies, runs unit/browser tests, builds and publishes `dist/`.
+3. Merge verified changes into `main`. **Deploy portfolio to GitHub Pages** runs automatically on pushes to `main`, including merges. It installs locked dependencies, runs unit/browser tests, builds and publishes `dist/` only after those checks pass. Manual runs remain available from the Actions tab.
 4. Open the deployment URL reported by the workflow.
 
-Deployments are manual, not triggered by every push. No custom domain or `CNAME` is configured here; the existing `whirlyfan.com` site stays unchanged.
+Pushes to `dev` do not deploy. GitHub Pages is configured to serve this repository at `https://whirlyfan.com/` with HTTPS enforced. Deployments preserve that repository setting; they do not change DNS. For this Actions-based publishing setup, the custom domain lives in Settings → Pages, not a repository `CNAME` file.
 
-This is the first iteration. Less repetitive bird behavior remains follow-up work.
+This is the first iteration. Individual bird actions recur naturally, but their sequence and timing are not a fixed loop.

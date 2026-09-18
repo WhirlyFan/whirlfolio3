@@ -19,7 +19,10 @@ export interface PaintedTarget {
 }
 
 /** Assemble independently drawn parts; no clock, DOM or renderer ownership here. */
-export function createPaintedScene(textures: Awaited<ReturnType<typeof loadArtwork>>['textures']) {
+export function createPaintedScene(
+  textures: Awaited<ReturnType<typeof loadArtwork>>['textures'],
+  birdSeed?: number,
+) {
   const container = new Container();
   // Keyboard/rest, ball, Icarus, guitar and grounded surfaces share one painting.
   const background = new Sprite({ texture: textures.background, label: 'room-static-background' });
@@ -28,7 +31,7 @@ export function createPaintedScene(textures: Awaited<ReturnType<typeof loadArtwo
   container.addChild(background);
   const lighting = createLighting(textures.floorReceiver);
   container.addChild(lighting.container);
-  const ambient = createAmbient(textures);
+  const ambient = createAmbient(textures, birdSeed);
   container.addChild(ambient.container);
   const plantReceivers = ['floor', 'desk', 'desk', 'floor', 'desk'] as const;
   ambient.foliage.forEach((plant, index) => lighting.add(plant, plantReceivers[index], 0.7));
