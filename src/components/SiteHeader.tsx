@@ -1,4 +1,5 @@
-import { asset, sections } from '../content/portfolio';
+import { ArrowDown } from 'lucide-react';
+import { asset, profile, sections } from '../content/portfolio';
 import { toHash, type Navigation } from '../app/navigation';
 import { Button } from './ui/button';
 
@@ -17,7 +18,7 @@ export function SiteHeader({ navigation, onRoom, onPortfolio }: Props) {
     <header className="layout-header pointer-events-none fixed inset-x-6 top-6 z-30 grid h-13.5 grid-cols-[1fr_auto_1fr] items-start gap-4.5 max-wide:grid-cols-2 max-reader:inset-x-4 max-reader:top-3.5 max-reader:gap-3">
       <a
         href="#room"
-        className={`${surface} pointer-events-auto flex h-13.5 items-center justify-self-start gap-2 py-1.5 pr-4 pl-2.25 font-serif text-2xl leading-[normal] tracking-[-1px] whitespace-nowrap max-reader:h-12.5 max-reader:gap-1.5 max-reader:py-[5px] max-reader:pr-3 max-reader:pl-[7px] max-reader:text-xl max-[381px]:p-2`}
+        className={`${surface} pointer-events-auto flex h-13.5 items-center justify-self-start gap-2 py-1.5 pr-4 pl-2.25 font-serif text-2xl leading-[normal] tracking-[-1px] whitespace-nowrap max-reader:h-12.5 max-reader:gap-1.5 max-reader:py-[5px] max-reader:pr-3 max-reader:pl-[7px] max-reader:text-xl max-compact:p-2`}
         aria-label="Whirlfolio home"
         onClick={onRoom}
       >
@@ -26,7 +27,7 @@ export function SiteHeader({ navigation, onRoom, onPortfolio }: Props) {
           src={asset('assets/fan-logo.jpg')}
           alt=""
         />
-        <span className="max-[381px]:hidden">
+        <span className="max-compact:hidden">
           whirlfolio<span className="text-ring">.</span>
         </span>
       </a>
@@ -40,7 +41,7 @@ export function SiteHeader({ navigation, onRoom, onPortfolio }: Props) {
             asChild
             variant="ghost"
             size="navigation"
-            className="px-4 text-[13px] aria-[current=location]:bg-secondary max-reader:flex-1 max-reader:px-[7px] max-reader:text-xs max-[381px]:px-1 max-[381px]:text-[11px]"
+            className="px-4 text-[13px] aria-[current=location]:bg-secondary max-reader:flex-auto max-reader:px-1.5 max-reader:text-xs max-compact:px-0.5 max-compact:text-[11px]"
           >
             <a
               href={toHash({ mode: navigation.mode, section: section.id })}
@@ -51,6 +52,18 @@ export function SiteHeader({ navigation, onRoom, onPortfolio }: Props) {
             </a>
           </Button>
         ))}
+        <span className="ml-1 border-l border-border pl-1 max-reader:ml-0 max-reader:pl-0.5">
+          <Button
+            asChild
+            variant="ghost"
+            size="navigation"
+            className="gap-1 px-3 text-[13px] max-reader:px-1.5 max-reader:text-xs max-compact:px-1 max-compact:text-[11px]"
+          >
+            <a href={profile.resume} download aria-label="Download résumé (PDF)">
+              Résumé <ArrowDown className="size-3 max-compact:hidden" aria-hidden="true" />
+            </a>
+          </Button>
+        </span>
       </nav>
       <nav
         aria-label="View"

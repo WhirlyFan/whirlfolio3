@@ -89,11 +89,6 @@ export function PortfolioPage({ onRoom }: { onRoom(): void }) {
                 Explore my work <ArrowDown aria-hidden="true" />
               </a>
             </Button>
-            <Button asChild variant="outline" size="portfolio">
-              <a href={profile.resume} download>
-                Résumé <ArrowDown aria-hidden="true" />
-              </a>
-            </Button>
             <a
               className="inline-flex min-h-11 items-center justify-center gap-2 px-2.25 text-[13px] max-reader:px-1 max-reader:text-xs"
               href={`mailto:${profile.email}`}
@@ -139,13 +134,7 @@ export function PortfolioPage({ onRoom }: { onRoom(): void }) {
         <Projects items={projects} presentation="editorial" />
       </section>
       <section className={sectionSpacing} id="experience">
-        <SectionHeading number="02" label="Along the way" title="Experience">
-          <Button asChild variant="outline" size="portfolio">
-            <a href={profile.resume} download>
-              Download résumé (PDF) <ArrowDown aria-hidden="true" />
-            </a>
-          </Button>
-        </SectionHeading>
+        <SectionHeading number="02" label="Along the way" title="Experience" />
         <Experience items={experience} presentation="editorial" />
       </section>
       <section className={sectionSpacing} id="photography">

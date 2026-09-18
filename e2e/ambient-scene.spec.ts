@@ -18,15 +18,23 @@ test('actual painted bird poses, flight and foliage change independently of the 
       import(pixiUrl),
     ]);
     const loaded = await loadArtwork(new AbortController().signal);
-    const scene = createPaintedScene(loaded.textures);
+    const scene = createPaintedScene(loaded.textures, 42);
+    const behaviorUrl = '/src/room/pixi/bird-behavior.ts';
+    const { createBirdBehavior } = await import(behaviorUrl);
+    const poseAt = createBirdBehavior(42);
+    const findTime = (predicate: (pose: ReturnType<typeof poseAt>) => boolean) => {
+      for (let step = 0; step < 3000; step++) if (predicate(poseAt(step / 10))) return step / 10;
+      throw new Error('Expected bird action did not occur');
+    };
     const renderer = new WebGLRenderer();
     await renderer.init({ width: 1600, height: 900, resolution: 1, antialias: false });
-    const frame = (time: number) => {
+    const frame = (time: number, showBird = true) => {
       scene.update({ elapsedSeconds: time, fanAngle: 0 }, false, {
         fanSpeed: 0,
         width: 1400,
         quality: 'low',
       });
+      if (!showBird) scene.container.getChildByLabel('room-bird', true).visible = false;
       renderer.render({ container: scene.container });
       const pixels = new Uint8Array(1600 * 900 * 4);
       renderer.gl.readPixels(0, 0, 1600, 900, renderer.gl.RGBA, renderer.gl.UNSIGNED_BYTE, pixels);
@@ -58,11 +66,15 @@ test('actual painted bird poses, flight and foliage change independently of the 
     try {
       const rest = frame(0);
       const wind = frame(1.5);
-      const blink = frame(3.12);
-      const tilt = frame(7.5);
-      const flight = frame(21.5);
-      const absent = frame(25);
-      const landed = frame(32);
+      const blink = frame(findTime((pose) => pose.frame === 1));
+      const tilt = frame(findTime((pose) => pose.frame === 2));
+      const flightTime = findTime((pose) => pose.action === 'depart') + 1.5;
+      const flight = frame(flightTime);
+      const flightWithoutBird = frame(flightTime, false);
+      const absent = frame(findTime((pose) => pose.action === 'away'));
+      const returnTime = findTime((pose) => pose.action === 'return');
+      // Compare the same breath phase during the guaranteed quiet hold after landing.
+      const landed = frame(Math.ceil((poseAt(returnTime).startedAt + 3) / 4) * 4);
       const bird = (image: Uint8Array) => changed(rest, image, 840, 330, 145, 98);
       return {
         idle: changed(rest, wind, 875, 389, 50, 32),
@@ -72,7 +84,8 @@ test('actual painted bird poses, flight and foliage change independently of the 
         // The new garden branch occupies the upper part of the old crop. The lower dove body
         // remains source-isolated, so an exact return still catches perch drift without foliage.
         returned: changed(rest, landed, 840, 367, 145, 61),
-        flying: changed(absent, flight, 630, 180, 170, 150),
+        // Same time with/without the bird isolates flight from moving foliage on any route.
+        flying: changed(flightWithoutBird, flight, 519, 36, 563, 405),
         leftLeaves: changed(rest, wind, 230, 270, 180, 215),
         deskLeaves: changed(rest, wind, 1110, 275, 160, 160),
         floorShadow: changed(rest, wind, 410, 730, 190, 150),

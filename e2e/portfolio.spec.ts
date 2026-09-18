@@ -43,7 +43,7 @@ test('conventional portfolio remains complete and directly linkable', async ({ p
   await expect(page.getByRole('heading', { name: 'Music', exact: true })).toBeAttached();
   await expect(page.getByText('Founding Engineer', { exact: true })).toBeAttached();
   await expect(page.getByText('January–July 2026', { exact: true })).toBeAttached();
-  const resume = page.getByRole('link', { name: 'Download résumé (PDF)' });
+  const resume = page.getByRole('banner').getByRole('link', { name: 'Download résumé (PDF)' });
   const pdf = await page.request.get((await resume.getAttribute('href'))!);
   expect(pdf.status()).toBe(200);
   expect((await pdf.body()).subarray(0, 5).toString()).toBe('%PDF-');

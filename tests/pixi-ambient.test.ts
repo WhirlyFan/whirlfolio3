@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest';
 import {
-  birdPose,
   foliageOffset,
   moteCount,
   motePose,
@@ -8,42 +7,9 @@ import {
   trailingFoliageOffset,
 } from '../src/room/pixi/ambient-motion';
 import { advanceMotion } from '../src/room/pixi/motion';
+import { createBirdBehavior } from '../src/room/pixi/bird-behavior';
 
 describe('summer room ambient motion', () => {
-  it('gives a perched bird distinct blink and curious head poses without moving its feet', () => {
-    const rest = birdPose(0);
-    const blink = birdPose(3.12);
-    const curious = birdPose(7.5);
-    expect(rest.frame).toBe(0);
-    expect(blink.frame).toBe(1);
-    expect(curious.frame).toBe(2);
-    for (const pose of [rest, blink, curious]) {
-      expect(pose).toMatchObject({ scale: 1, visible: true, flying: false });
-      expect(Math.abs(pose.x) + Math.abs(pose.y)).toBe(0);
-    }
-  });
-
-  it('flies into the garden, stays away briefly, and lands back on the sill', () => {
-    const takeoff = birdPose(20);
-    const away = birdPose(22);
-    const returning = birdPose(30);
-    expect(takeoff).toMatchObject({ scale: 1, flying: true });
-    expect(Math.abs(takeoff.x) + Math.abs(takeoff.y)).toBe(0);
-    expect(away.x).toBeLessThan(0);
-    expect(away.y).toBeLessThan(-100);
-    expect(away.scale).toBeLessThan(1);
-    expect(away.frame).toBeGreaterThanOrEqual(3);
-    expect(away.frame).toBeLessThanOrEqual(5);
-    expect(birdPose(25).visible).toBe(false);
-    expect(returning).toMatchObject({ visible: true, flying: true, direction: -1 });
-    expect(birdPose(32)).toMatchObject({ scale: 1, visible: true, flying: false });
-    expect(Math.abs(birdPose(32).x) + Math.abs(birdPose(32).y)).toBe(0);
-    expect(birdPose(36)).toEqual(birdPose(0));
-    // Position and scale must approach the same perch at either end of a flight.
-    expect(Math.abs(birdPose(31.999).x)).toBeLessThan(0.1);
-    expect(Math.abs(birdPose(31.999).y)).toBeLessThan(0.1);
-  });
-
   it('pins plant roots while leaves move in the window breeze even with the fan off', () => {
     expect(foliageOffset(1, 3, 0, 0)).toBe(0);
     const leaf = foliageOffset(0, 3, 0, 0);
@@ -109,6 +75,7 @@ describe('summer room ambient motion', () => {
   it.each([{ paused: true }, { reducedMotion: true }])(
     'freezes the full ambient scene for %j',
     (policy) => {
+      const birdPose = createBirdBehavior(42);
       const clock = { elapsedSeconds: 21, fanAngle: 1 };
       const next = advanceMotion(clock, 0.05, {
         fanSpeed: 2,

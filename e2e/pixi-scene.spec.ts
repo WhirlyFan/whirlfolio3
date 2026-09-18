@@ -151,7 +151,7 @@ test('uses the painted renderer and keeps fan-off window animation independent',
 
 for (const layer of [
   'curtain-v1.webp',
-  'dove-atlas-v1.webp',
+  'dove-atlas-v2.webp',
   'foliage-atlas-v1.webp',
   'trailing-atlas-v1.webp',
   'summer-room-v11.svg',
