@@ -65,11 +65,13 @@ Input photos, research, local memory, screenshots, unused art and generation dra
 
 The site builds into `dist/`, uses relative asset paths and hash navigation, and supports the `/whirlfolio3/` repository path without server routing rules.
 
-1. Push verified changes to `WhirlyFan/whirlfolio3` using the WhirlyFan account.
+1. Push changes to `WhirlyFan/whirlfolio3` using the WhirlyFan account.
 2. In repository Settings → Pages, use **GitHub Actions** as the publishing source.
-3. Merge verified changes into `main`. **Deploy portfolio to GitHub Pages** runs automatically on pushes to `main`, including merges. It installs locked dependencies, runs unit/browser tests, builds and publishes `dist/` only after those checks pass. Manual runs remain available from the Actions tab.
+3. Merge changes into `main`. **Deploy portfolio to GitHub Pages** runs automatically on pushes to `main`, including merges. It installs locked dependencies, builds and publishes `dist/` after the build succeeds. Manual runs remain available from the Actions tab.
 4. Open the deployment URL reported by the workflow.
 
 Pushes to `dev` do not deploy. GitHub Pages is configured to serve this repository at `https://whirlyfan.com/` with HTTPS enforced. Deployments preserve that repository setting; they do not change DNS. For this Actions-based publishing setup, the custom domain lives in Settings → Pages, not a repository `CNAME` file.
+
+Tests are optional and do not block deployment. Run `pnpm test` for unit tests or `pnpm test:e2e` for browser tests when useful; install the browser with `pnpm exec playwright install chromium` before the first browser-test run.
 
 This is the first iteration. Individual bird actions recur naturally, but their sequence and timing are not a fixed loop.
